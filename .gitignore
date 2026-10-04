@@ -1,0 +1,80 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# local Android build/cache output
+/.android-build/
+android-thermal/.gradle/
+android-thermal/app/build/
+*.apk
+!public/downloads/
+!public/downloads/TruePower-Receipt-Builder.apk
+
+# local screenshots and device test captures
+*-screen.png
+*-test.png
+after-*.png
+bitmap-picker.png
+current-phone.png
+demo-picker.png
+font-test.png
+items-test-start.png
+phone-screen*.png
+post-install.png
+print-test-current.png
+product-picker-now.png
+product-print-screen.png
+receipt-*.png
+reference-*.png
+restart-*.png
+test-latest*.png
+v22-*.png
+v23-*.png
+v231-*.png
+final-*.png
+admin_page.html
+ppas.txt
+
+# Android Studio/project-local state
+android-thermal/.idea/
+android-thermal/.kotlin/
+android-thermal/build/
+android-thermal/local.properties
