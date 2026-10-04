@@ -35,6 +35,9 @@ function emptyLine() {
   };
 }
 
+const DEFAULT_RECEIPT_NOTES =
+  "Payment after installation\nPochi la Biashara: 0701 039256\n2 years warranty";
+
 function describeRlsError(error) {
   const code = String(error?.code || "");
   const status = error?.status || error?.statusCode;
@@ -268,9 +271,7 @@ export default function ReceiptBuilder() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [lines, setLines] = useState([emptyLine()]);
-  const [notes, setNotes] = useState(
-    "Payment after installation\nPochi la Biashara: 0701 039256\n2 years warranty",
-  );
+  const [notes, setNotes] = useState(DEFAULT_RECEIPT_NOTES);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [thermalPrinting, setThermalPrinting] = useState(false);
@@ -476,6 +477,21 @@ export default function ReceiptBuilder() {
     setLines((ls) => [...ls, emptyLine()]);
   }
 
+  function startNewReceipt(rows = history) {
+    setSavedId(null);
+    setSelectedReceipt(null);
+    setIsReceiptModalOpen(false);
+    setReceiptNumber(getNextReceiptNumber(rows));
+    setReceiptDate(new Date().toISOString().slice(0, 10));
+    setCustomerName("");
+    setCustomerPhone("");
+    setLines([emptyLine()]);
+    setNotes(DEFAULT_RECEIPT_NOTES);
+    setShowProductPicker(false);
+    setProductQuery("");
+    setActivePanel("builder");
+  }
+
   function removeLine(id) {
     setLines((ls) => (ls.length > 1 ? ls.filter((l) => l.id !== id) : ls));
   }
@@ -646,17 +662,7 @@ export default function ReceiptBuilder() {
   async function saveReceipt({ openHistory = false, openModal = false } = {}) {
     setSaving(true);
     try {
-      const nextReceiptNumber = getNextReceiptNumber(history);
-      const parsedReceiptNumber = parseReceiptNumber(receiptNumber);
-      const receiptNumberForSave =
-        savedId
-          ? parsedReceiptNumber || Number(nextReceiptNumber)
-          : parsedReceiptNumber && parsedReceiptNumber >= Number(nextReceiptNumber)
-            ? parsedReceiptNumber
-            : Number(nextReceiptNumber);
-
       const payload = {
-        receipt_number: receiptNumberForSave,
         customer_name: customerName || null,
         customer_phone: customerPhone || null,
         items: lines.map((l) => ({
@@ -668,8 +674,11 @@ export default function ReceiptBuilder() {
         total,
         notes,
       };
+      const parsedReceiptNumber = parseReceiptNumber(receiptNumber);
       let response;
       if (savedId) {
+        const nextReceiptNumber = getNextReceiptNumber(history);
+        payload.receipt_number = parsedReceiptNumber || Number(nextReceiptNumber);
         const updateResult = await supabase
           .from("receipts")
           .update(payload)
@@ -689,11 +698,14 @@ export default function ReceiptBuilder() {
       const data = response.data;
       setSavedId(data.id);
       setSelectedReceipt(data);
-      setReceiptNumber(String(data.receipt_number || receiptNumberForSave));
+      setReceiptNumber(String(data.receipt_number || parsedReceiptNumber || ""));
       if (openModal) {
         setIsReceiptModalOpen(true);
       }
-      await loadHistory();
+      const rows = await loadHistory();
+      if (!savedId) {
+        setReceiptNumber(String(data.receipt_number || getNextReceiptNumber(rows)));
+      }
       if (openHistory) {
         setActivePanel("history");
         setHistoryPage(0);
@@ -970,7 +982,7 @@ export default function ReceiptBuilder() {
         setCustomerName("");
         setCustomerPhone("");
         setLines([emptyLine()]);
-        setNotes("Payment after installation\nPochi la Biashara: 0701 039256\n2 years warranty");
+        setNotes(DEFAULT_RECEIPT_NOTES);
       }
 
       setIsReceiptModalOpen(false);
@@ -1666,6 +1678,13 @@ export default function ReceiptBuilder() {
                 </p>
               </div>
               <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => startNewReceipt()}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-600 bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:border-emerald-700 hover:bg-emerald-700 sm:w-auto sm:text-sm"
+                >
+                  <Plus size={16} /> New Receipt
+                </button>
                 <button
                   type="button"
                   onClick={() => {
