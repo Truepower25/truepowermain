@@ -34,6 +34,10 @@ yarn-error.log*
 .env*
 public-all.sql
 auth-data.sql
+public-schema.sql
+public-schema-create.sql
+public-data.sql
+storage-buckets-data.sql
 
 # vercel
 .vercel
