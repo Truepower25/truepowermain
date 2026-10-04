@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Bluetooth, Plus, Trash2, Printer, Share2, Search, X, History, Download, Package } from "lucide-react";
 import { getProducts, supabase } from "@/lib/supabase";
 import { buildThermalReceipt } from "@/lib/thermalReceipt";
@@ -644,13 +645,15 @@ export default function ReceiptBuilder() {
   async function handleDownloadPdf() {
     setExporting(true);
     try {
+      let savedReceipt = null;
       if (!savedId) {
-        await saveReceipt();
+        savedReceipt = await saveReceipt();
       }
+      const numberForOutput = savedReceipt?.receipt_number || receiptNumber;
 
       const pdf = await createReceiptPdf({ paper: "58mm" });
       if (pdf) {
-        pdf.save(`TruePower-Receipt-${receiptNumber || "receipt"}.pdf`);
+        pdf.save(`TruePower-Receipt-${numberForOutput || "receipt"}.pdf`);
       }
     } catch (error) {
       alert(error.message || "Could not export the 58mm receipt PDF");
@@ -696,9 +699,11 @@ export default function ReceiptBuilder() {
       }
       if (response.error) throw response.error;
       const data = response.data;
-      setSavedId(data.id);
-      setSelectedReceipt(data);
-      setReceiptNumber(String(data.receipt_number || parsedReceiptNumber || ""));
+      flushSync(() => {
+        setSavedId(data.id);
+        setSelectedReceipt(data);
+        setReceiptNumber(String(data.receipt_number || parsedReceiptNumber || ""));
+      });
       if (openModal) {
         setIsReceiptModalOpen(true);
       }
@@ -717,9 +722,10 @@ export default function ReceiptBuilder() {
   }
 
   async function handlePrint() {
+    let savedReceipt = null;
     if (!savedId) {
       try {
-        await saveReceipt();
+        savedReceipt = await saveReceipt();
       } catch (error) {
         alert(error.message || "Could not save receipt before printing");
         return;
@@ -734,7 +740,7 @@ export default function ReceiptBuilder() {
       const printWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer");
 
       if (!printWindow) {
-        pdf.save(`TruePower-Receipt-${receiptNumber || "receipt"}.pdf`);
+        pdf.save(`TruePower-Receipt-${savedReceipt?.receipt_number || receiptNumber || "receipt"}.pdf`);
       }
     } catch (error) {
       alert(error.message || "Could not prepare the exact 58mm receipt PDF");
@@ -742,9 +748,10 @@ export default function ReceiptBuilder() {
   }
 
   async function handleA4Print() {
+    let savedReceipt = null;
     if (!savedId) {
       try {
-        await saveReceipt();
+        savedReceipt = await saveReceipt();
       } catch (error) {
         alert(error.message || "Could not save receipt before printing");
         return;
@@ -759,7 +766,7 @@ export default function ReceiptBuilder() {
       const printWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer");
 
       if (!printWindow) {
-        pdf.save(`TruePower-Receipt-A4-${receiptNumber || "receipt"}.pdf`);
+        pdf.save(`TruePower-Receipt-A4-${savedReceipt?.receipt_number || receiptNumber || "receipt"}.pdf`);
       }
     } catch (error) {
       alert(error.message || "Could not prepare the A4 receipt PDF");
@@ -791,7 +798,7 @@ export default function ReceiptBuilder() {
           website: business.website,
         },
         receipt: {
-          receiptNumber: receiptNumber || savedReceipt?.receipt_number || getNextReceiptNumber(history),
+          receiptNumber: savedReceipt?.receipt_number || receiptNumber || getNextReceiptNumber(history),
           receiptDate,
           customerName,
           items: lines.map((line) => ({
@@ -913,10 +920,10 @@ export default function ReceiptBuilder() {
     }
   }
 
-  function buildWhatsAppText() {
+  function buildWhatsAppText(numberForOutput = receiptNumber) {
     const lines_ = [];
     lines_.push(`*${business.name}*`);
-    lines_.push(`Receipt #${receiptNumber}`);
+    lines_.push(`Receipt #${numberForOutput}`);
     lines_.push(`Date: ${receiptDate}`);
     if (customerName) lines_.push(`Customer: ${customerName}`);
     lines_.push("");
@@ -935,10 +942,21 @@ export default function ReceiptBuilder() {
   }
 
   async function handleShareWhatsApp() {
-    const text = buildWhatsAppText();
+    let savedReceipt = null;
+    if (!savedId) {
+      try {
+        savedReceipt = await saveReceipt();
+      } catch (error) {
+        alert(error.message || "Could not save receipt before sharing");
+        return;
+      }
+    }
+
+    const numberForOutput = savedReceipt?.receipt_number || receiptNumber;
+    const text = buildWhatsAppText(numberForOutput);
     if (navigator.share) {
       try {
-        await navigator.share({ title: `Receipt #${receiptNumber}`, text });
+        await navigator.share({ title: `Receipt #${numberForOutput}`, text });
         return;
       } catch {
       }
