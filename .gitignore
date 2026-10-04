@@ -38,6 +38,8 @@ public-schema.sql
 public-schema-create.sql
 public-data.sql
 storage-buckets-data.sql
+storage-policies-create.sql
+storage-policies-missing.sql
 
 # vercel
 .vercel
