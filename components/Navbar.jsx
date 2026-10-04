@@ -302,7 +302,7 @@ export default function Navbar() {
                 onClick={() => setOpen(!open)}
                 aria-label={open ? "Close menu" : "Open menu"}
                 title={open ? "Close menu" : "Open menu"}
-                className="inline-flex items-center justify-center rounded-full bg-slate-100 p-2 text-slate-700 transition-colors hover:bg-slate-200 md:hidden"
+                className="inline-flex items-center justify-center rounded-full bg-slate-100 p-2 text-slate-700 transition-colors hover:bg-slate-200"
               >
                 <Menu />
               </button>
